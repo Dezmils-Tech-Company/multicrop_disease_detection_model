@@ -1,0 +1,27 @@
+# Inference Configuration
+inference:
+  model_checkpoint: "checkpoints/best_model.pth"
+  device: "cuda"  # Options: cuda, cpu
+  batch_size: 32
+  top_k_predictions: 3
+  confidence_threshold: 0.0
+
+# Model Metadata
+model_metadata:
+  num_classes: 53
+  model_type: "resnet50"
+  input_size: 224
+  output_format: "json"
+
+# API Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  reload: false
+
+# Logging
+logging:
+  level: "INFO"
+  log_dir: "logs"
+  save_predictions: true

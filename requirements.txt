@@ -1,0 +1,24 @@
+
+# Core numeric and data
+numpy>=1.24
+pandas>=1.5
+scikit-learn>=1.2
+
+# Image processing & visualization
+Pillow>=9.5
+opencv-python>=4.7.0
+scikit-image>=0.20
+matplotlib>=3.7
+seaborn>=0.12
+
+# PyTorch (CPU/GPU) and torchvision
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Notebooks / tooling
+notebook>=6.5
+ipykernel>=6.22
+tqdm>=4.65
+
+# Optional augmentations
+albumentations>=1.3
