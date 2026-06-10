@@ -12,6 +12,7 @@ def create_dataloaders(
     batch_size: int = 64,
     num_workers: int = 4,
     image_size: int = 224,
+    image_extensions: Tuple[str, ...] = (".jpg", ".jpeg", ".png"),
 ) -> Tuple[DataLoader, DataLoader, Optional[DataLoader], Dict[str, int]]:
     """
     Create train, validation, and optionally test dataloaders.
@@ -23,6 +24,7 @@ def create_dataloaders(
         batch_size: Batch size for dataloaders
         num_workers: Number of worker processes
         image_size: Image size for transforms
+        image_extensions: Allowed image file extensions
     
     Returns:
         Tuple of (train_loader, val_loader, test_loader, class_to_idx)
@@ -31,6 +33,7 @@ def create_dataloaders(
     train_dataset = CropDiseaseDataset(
         train_dir,
         transform=get_train_transforms(image_size),
+        allowed_extensions=image_extensions,
     )
     class_to_idx = train_dataset.class_to_idx
     num_classes = len(class_to_idx)

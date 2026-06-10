@@ -25,7 +25,7 @@ def test_model_creation():
         dropout_rate=0.3,
     )
     
-    print("\n✓ Model created successfully")
+    print("\n[OK] Model created successfully")
     return model
 
 
@@ -56,7 +56,7 @@ def test_forward_pass(model):
     print(f"\nTop predictions: {predictions[:4].tolist()}")
     print(f"Prediction range: [{predictions.min()}, {predictions.max()}]")
     
-    print("\n✓ Forward pass successful")
+    print("\n[OK] Forward pass successful")
     return output
 
 
@@ -74,11 +74,11 @@ def test_loss_computation(model):
     
     # Cross-entropy loss
     ce_loss = get_loss_function("cross_entropy", device="cpu")
-    print(f"  ✓ Cross-Entropy Loss created")
+    print(f"  [OK] Cross-Entropy Loss created")
     
     # Focal loss
     focal_loss = get_loss_function("focal", device="cpu")
-    print(f"  ✓ Focal Loss created")
+    print(f"  [OK] Focal Loss created")
     
     # Test with dummy batch
     dummy_output = torch.randn(16, 53)
@@ -97,7 +97,7 @@ def test_loss_computation(model):
     weighted_value = weighted_loss(dummy_output, dummy_targets)
     print(f"Weighted Cross-Entropy loss: {weighted_value:.4f}")
     
-    print("\n✓ Loss computation successful")
+    print("\n[OK] Loss computation successful")
 
 
 def test_model_freeze():
@@ -129,7 +129,7 @@ def test_model_freeze():
     print(f"\nAfter unfreezing:")
     print(f"  Trainable: {trainable_params_unfrozen:,} ({100*trainable_params_unfrozen/total_params:.1f}%)")
     
-    print("\n✓ Model freezing successful")
+    print("\n[OK] Model freezing successful")
 
 
 def main():
@@ -145,12 +145,12 @@ def main():
         test_model_freeze()
         
         print("\n" + "="*70)
-        print("ALL TESTS PASSED ✓")
+        print("ALL TESTS PASSED [OK]")
         print("="*70)
         print("\nModel architecture is ready for training!")
         
     except Exception as e:
-        print(f"\n❌ ERROR: {e}")
+        print(f"\n[ERROR] {e}")
         import traceback
         traceback.print_exc()
         return False

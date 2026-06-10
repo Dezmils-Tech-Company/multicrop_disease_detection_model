@@ -1,5 +1,62 @@
-.venv/
+# Python cache and artifacts
 __pycache__/
-*.pyc
-.env
+*.py[cod]
+*$py.class
+.Python
+build/
+dist/
+eggs/
+.eggs/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+__pypackages__/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs and checkpoints
+logs/
+*.log
+checkpoints/
+
+# Models and outputs
+*.pth
+*.pt
+*.h5
+*.pkl
+*.ckpt
+
+# Data directories
 dataset/
+Datasets/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+
+# Mac and Windows
+*.DS_Store
+
+# Python packaging
+*.egg-info/
+.installed.cfg
+
+git-credential-cache/

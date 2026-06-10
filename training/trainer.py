@@ -31,6 +31,11 @@ class Trainer:
         checkpoint_dir: str = "checkpoints",
         log_dir: str = "logs",
         early_stopping_patience: int = 10,
+        weight_decay: float = 0.0,
+        scheduler_type: str = "cosine",
+        scheduler_kwargs: Optional[dict] = None,
+        checkpoint_monitor: str = "val_accuracy",
+        save_best_only: bool = True,
     ):
         """
         Args:
@@ -46,6 +51,11 @@ class Trainer:
             checkpoint_dir: Directory for model checkpoints
             log_dir: Directory for logs
             early_stopping_patience: Epochs to wait for improvement
+            weight_decay: Optimizer weight decay
+            scheduler_type: LR scheduler type
+            scheduler_kwargs: Scheduler arguments
+            checkpoint_monitor: Metric name to monitor for checkpointing
+            save_best_only: Save only the best checkpoint
         """
         self.model = model.to(device)
         self.train_loader = train_loader
@@ -61,9 +71,18 @@ class Trainer:
         
         # Optimizer
         if optimizer_type.lower() == "adam":
-            self.optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+            self.optimizer = optim.Adam(
+                model.parameters(),
+                lr=learning_rate,
+                weight_decay=weight_decay,
+            )
         elif optimizer_type.lower() == "sgd":
-            self.optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+            self.optimizer = optim.SGD(
+                model.parameters(),
+                lr=learning_rate,
+                momentum=0.9,
+                weight_decay=weight_decay,
+            )
         else:
             raise ValueError(f"Unknown optimizer: {optimizer_type}")
         
@@ -78,9 +97,10 @@ class Trainer:
         self.early_stopping = EarlyStopping(patience=early_stopping_patience)
         self.checkpoint = ModelCheckpoint(
             checkpoint_dir=checkpoint_dir,
-            monitor="val_accuracy",
+            monitor=checkpoint_monitor,
+            save_best_only=save_best_only,
         )
-        self.lr_scheduler = LRScheduler(scheduler_type="cosine", T_max=num_epochs)
+        self.lr_scheduler = LRScheduler(scheduler_type=scheduler_type, **(scheduler_kwargs or {}))
         self.lr_scheduler.create_scheduler(self.optimizer)
         
         # Metrics
@@ -160,18 +180,22 @@ class Trainer:
             print(f"  Val Loss: {val_metrics['loss']:.4f}, Accuracy: {val_metrics['accuracy']:.2f}%")
             
             # Step scheduler
-            self.lr_scheduler.step()
+            if self.lr_scheduler.scheduler_type == "reduce_on_plateau":
+                self.lr_scheduler.step(val_metrics.get("loss"))
+            else:
+                self.lr_scheduler.step()
             
-            # Save checkpoint
+            # Save latest checkpoint every epoch
             self.checkpoint.save_checkpoint(
                 self.model,
                 self.optimizer,
                 epoch,
                 val_metrics,
-                filename=f"checkpoint_epoch_{epoch:03d}.pth"
+                filename=f"checkpoint_epoch_{epoch:03d}.pth",
+                save_best_only=False,
             )
-            
-            # Save best model
+
+            # Save best model checkpoint
             if self.checkpoint.save_checkpoint(
                 self.model,
                 self.optimizer,

@@ -20,5 +20,10 @@ notebook>=6.5
 ipykernel>=6.22
 tqdm>=4.65
 
+# API and configuration
+fastapi>=0.100.0
+uvicorn>=0.22.0
+PyYAML>=6.0
+
 # Optional augmentations
 albumentations>=1.3

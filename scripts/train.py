@@ -4,12 +4,15 @@ import argparse
 import json
 import torch
 import yaml
+import sys
 from pathlib import Path
 
-from data import create_dataloaders
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from data import create_dataloaders, CropDiseaseDataset
 from models import DiseaseDetectionModel
-from training import Trainer, get_loss_function
-from data import CropDiseaseDataset
+from training import Trainer
 
 
 def load_config(config_path: str) -> dict:
@@ -42,6 +45,7 @@ def main(args):
         batch_size=config["training"]["batch_size"],
         num_workers=config["data"]["num_workers"],
         image_size=config["model"]["input_size"],
+        image_extensions=tuple(config["data"].get("image_extensions", [".jpg", ".jpeg", ".png"])),
     )
     
     # Get class weights for imbalanced data
@@ -84,6 +88,17 @@ def main(args):
         checkpoint_dir=config["callbacks"]["checkpoint_dir"],
         log_dir=config["callbacks"]["log_dir"],
         early_stopping_patience=config["callbacks"]["early_stopping_patience"],
+        weight_decay=config["training"].get("weight_decay", 0.0),
+        scheduler_type=config.get("scheduler", {}).get("type", "cosine"),
+        scheduler_kwargs={
+            "T_max": config.get("scheduler", {}).get("T_max", config["training"]["num_epochs"]),
+            "step_size": config.get("scheduler", {}).get("step_size", 10),
+            "gamma": config.get("scheduler", {}).get("gamma", 0.1),
+            "eta_min": config.get("scheduler", {}).get("eta_min", 0.0),
+            "patience": config.get("scheduler", {}).get("patience", 5),
+            "mode": config.get("scheduler", {}).get("mode", "min"),
+        },
+        checkpoint_monitor=config["callbacks"].get("checkpoint_monitor", "val_accuracy"),
     )
     
     # Train

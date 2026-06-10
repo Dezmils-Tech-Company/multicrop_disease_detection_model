@@ -1,6 +1,5 @@
 """Metrics calculation and evaluation."""
 import torch
-import torch.nn.functional as F
 from typing import Dict, Tuple
 import numpy as np
 
