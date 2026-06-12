@@ -42,6 +42,7 @@ checkpoints/
 
 # Data directories
 dataset/
+dataset.tar.gz
 Datasets/
 
 # System files
@@ -60,4 +61,4 @@ Thumbs.db
 .installed.cfg
 
 git-credential-cache/
-AGENT_INSTRUCTIONS.MD
+AGENT_INSTRUCTIONS.md
