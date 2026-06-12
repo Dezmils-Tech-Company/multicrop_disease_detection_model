@@ -1,45 +1,48 @@
+# Model Configuration
 model:
-  type: "resnet50"
+  type: "resnet50"  # Options: resnet50, resnet152, efficientnet_b4, densenet121, vit_b_16
   pretrained: true
-  freeze_backbone_layers: 0
+  freeze_backbone_layers: 0  # 0 = no freezing, 3 = freeze 3 blocks
   input_size: 224
 
+# Training Configuration
 training:
   batch_size: 64
-  num_epochs: 25
-  learning_rate: 0.001
-  optimizer: "adam"
+  num_epochs: 50
+  learning_rate: 0.0001
+  optimizer: "adam"  # Options: adam, sgd
   weight_decay: 0.0001
   gradient_clip_norm: 1.0
-  warmup_epochs: 3
+  warmup_epochs: 5
 
+# Loss and Callbacks
 loss:
-  type: "cross_entropy"
-  focal_alpha: 0.25
+  type: "cross_entropy"  # Options: cross_entropy, focal
+  focal_alpha: 0.25  # Only used if loss_type is focal
   focal_gamma: 2.0
 
 callbacks:
-  early_stopping_patience: 7
+  early_stopping_patience: 10
   checkpoint_monitor: "val_accuracy"
   checkpoint_dir: "checkpoints"
   log_dir: "logs"
 
+# Learning Rate Scheduling
 scheduler:
-  type: "cosine"
-  T_max: 25          # must match num_epochs
-  step_size: 10
-  gamma: 0.1
+  type: "cosine"  # Options: cosine, step, exponential
+  T_max: 50  # For cosine
+  step_size: 10  # For step
+  gamma: 0.1  # For step and exponential
 
+# Data Configuration
 data:
   train_path: "dataset/train"
   val_path: "dataset/val"
   test_path: "dataset/test"
-  num_workers: 2      # was 4 — system max is 2
-  image_extensions:
-    - ".jpg"
-    - ".jpeg"
-    - ".png"
+  num_workers: 4
+  image_extensions: [".jpg", ".jpeg", ".png"]
 
+# Data Augmentation
 augmentation:
   horizontal_flip: true
   vertical_flip: true
@@ -47,16 +50,9 @@ augmentation:
   brightness: 0.2
   contrast: 0.2
   saturation: 0.2
-  crop_scale:
-    - 0.8
-    - 1.0
+  crop_scale: [0.8, 1.0]
 
+# Normalization (ImageNet)
 normalization:
-  mean:
-    - 0.485
-    - 0.456
-    - 0.406
-  std:
-    - 0.229
-    - 0.224
-    - 0.225
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
