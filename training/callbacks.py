@@ -64,6 +64,7 @@ class ModelCheckpoint:
         metrics: dict,
         filename: str = "checkpoint.pth",
         save_best_only: Optional[bool] = None,
+        scheduler: Optional[object] = None,
     ) -> bool:
         """
         Save checkpoint.
@@ -93,16 +94,26 @@ class ModelCheckpoint:
             }
             if hasattr(model, "get_config"):
                 checkpoint_data["config"] = model.get_config()
+            if scheduler is not None and hasattr(scheduler, "state_dict"):
+                checkpoint_data["scheduler_state_dict"] = scheduler.state_dict()
             torch.save(checkpoint_data, checkpoint_path)
             return True
         
         return False
     
-    def load_checkpoint(self, model: nn.Module, optimizer: torch.optim.Optimizer, checkpoint_path: str):
+    def load_checkpoint(
+        self,
+        model: nn.Module,
+        optimizer: torch.optim.Optimizer,
+        checkpoint_path: str,
+        scheduler: Optional[object] = None,
+    ):
         """Load checkpoint."""
-        checkpoint = torch.load(checkpoint_path)
+        checkpoint = torch.load(checkpoint_path, map_location=torch.device("cpu"))
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        if scheduler is not None and "scheduler_state_dict" in checkpoint:
+            scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
         epoch = checkpoint["epoch"]
         return epoch
 

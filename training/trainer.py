@@ -1,4 +1,5 @@
 """Main training loop."""
+import re
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -36,6 +37,7 @@ class Trainer:
         scheduler_kwargs: Optional[dict] = None,
         checkpoint_monitor: str = "val_accuracy",
         save_best_only: bool = True,
+        auto_resume: bool = False,
     ):
         """
         Args:
@@ -103,6 +105,9 @@ class Trainer:
         self.lr_scheduler = LRScheduler(scheduler_type=scheduler_type, **(scheduler_kwargs or {}))
         self.lr_scheduler.create_scheduler(self.optimizer)
         
+        self.auto_resume = auto_resume
+        self.start_epoch = 1
+        
         # Metrics
         num_classes = model.num_classes
         self.train_metrics = MetricsCalculator(num_classes)
@@ -111,12 +116,61 @@ class Trainer:
         # Logging
         self.history = []
         self.log_file = self.log_dir / "training_history.csv"
+        if self.auto_resume and self.log_file.exists():
+            self._load_history()
         
         # Print info
         print(f"Device: {device}")
         print(f"Loss function: {loss_type}")
         print(f"Optimizer: {optimizer_type} (lr={learning_rate})")
     
+    def _extract_epoch_number(self, checkpoint_path: Path) -> int:
+        name = checkpoint_path.stem
+        match = re.search(r"checkpoint_epoch_(\d+)$", name)
+        return int(match.group(1)) if match else -1
+
+    def _find_latest_checkpoint(self) -> Optional[Path]:
+        latest_file = self.checkpoint_dir / "latest_checkpoint.pth"
+        if latest_file.exists():
+            return latest_file
+
+        checkpoints = list(self.checkpoint_dir.glob("checkpoint_epoch_*.pth"))
+        if not checkpoints:
+            return None
+        return max(checkpoints, key=self._extract_epoch_number)
+
+    def _load_history(self):
+        try:
+            with open(self.log_file, newline="") as f:
+                reader = csv.DictReader(f)
+                self.history = [
+                    {
+                        "epoch": int(row["epoch"]),
+                        "train_loss": float(row["train_loss"]),
+                        "train_accuracy": float(row["train_accuracy"]),
+                        "val_loss": float(row["val_loss"]),
+                        "val_accuracy": float(row["val_accuracy"]),
+                    }
+                    for row in reader
+                ]
+        except Exception:
+            self.history = []
+
+    def _load_latest_checkpoint(self) -> int:
+        checkpoint_path = self._find_latest_checkpoint()
+        if checkpoint_path is None:
+            return 1
+
+        epoch = self.checkpoint.load_checkpoint(
+            self.model,
+            self.optimizer,
+            str(checkpoint_path),
+            scheduler=self.lr_scheduler.scheduler,
+        )
+        self.start_epoch = epoch + 1
+        print(f"Resumed training from checkpoint {checkpoint_path.name} at epoch {epoch}")
+        return self.start_epoch
+
     def train_epoch(self) -> Dict[str, float]:
         """Train for one epoch."""
         self.model.train()
@@ -165,10 +219,21 @@ class Trainer:
     
     def train(self) -> Dict:
         """Main training loop."""
-        print(f"\nStarting training for {self.num_epochs} epochs...")
+        if self.auto_resume:
+            self._load_latest_checkpoint()
+
+        if self.start_epoch > self.num_epochs:
+            print(f"\nCheckpoint already contains epoch {self.start_epoch - 1}, which is beyond the requested {self.num_epochs} epochs.")
+            return {
+                "history": self.history,
+                "total_epochs": self.start_epoch - 1,
+                "training_time": "0:00:00",
+            }
+
+        print(f"\nStarting training for {self.num_epochs} epochs (from epoch {self.start_epoch})...")
         start_time = datetime.now()
         
-        for epoch in range(1, self.num_epochs + 1):
+        for epoch in range(self.start_epoch, self.num_epochs + 1):
             print(f"\nEpoch [{epoch}/{self.num_epochs}]")
             
             # Train
@@ -193,6 +258,16 @@ class Trainer:
                 val_metrics,
                 filename=f"checkpoint_epoch_{epoch:03d}.pth",
                 save_best_only=False,
+                scheduler=self.lr_scheduler.scheduler,
+            )
+            self.checkpoint.save_checkpoint(
+                self.model,
+                self.optimizer,
+                epoch,
+                val_metrics,
+                filename="latest_checkpoint.pth",
+                save_best_only=False,
+                scheduler=self.lr_scheduler.scheduler,
             )
 
             # Save best model checkpoint
@@ -201,7 +276,8 @@ class Trainer:
                 self.optimizer,
                 epoch,
                 val_metrics,
-                filename="best_model.pth"
+                filename="best_model.pth",
+                scheduler=self.lr_scheduler.scheduler,
             ):
                 print(f"  ✓ Best model saved")
             

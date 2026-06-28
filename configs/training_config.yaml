@@ -7,8 +7,8 @@ model:
 
 # Training Configuration
 training:
-  batch_size: 64
-  num_epochs: 50
+  batch_size: 32
+  num_epochs: 20
   learning_rate: 0.0001
   optimizer: "adam"  # Options: adam, sgd
   weight_decay: 0.0001
@@ -22,10 +22,11 @@ loss:
   focal_gamma: 2.0
 
 callbacks:
-  early_stopping_patience: 10
+  early_stopping_patience: 5
   checkpoint_monitor: "val_accuracy"
   checkpoint_dir: "checkpoints"
   log_dir: "logs"
+  auto_resume: true  # Automatically resume from latest checkpoint if it exists
 
 # Learning Rate Scheduling
 scheduler:

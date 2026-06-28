@@ -99,6 +99,7 @@ def main(args):
             "mode": config.get("scheduler", {}).get("mode", "min"),
         },
         checkpoint_monitor=config["callbacks"].get("checkpoint_monitor", "val_accuracy"),
+        auto_resume=config["callbacks"].get("auto_resume", False),
     )
     
     # Train
